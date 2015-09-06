@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<playground version='6.0' target-platform='ios' requires-full-environment='true' display-mode='rendered'>
+    <pages>
+        <page name='求解聯立方程組'/>
+        <page name='矩陣基本運算'/>
+        <page name='BLAS Practice - 1'/>
+        <page name='BLAS Practice - 2'/>
+    </pages>
+</playground>
