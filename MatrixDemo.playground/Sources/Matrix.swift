@@ -8,6 +8,7 @@ public enum MatrixError:ErrorType {
     case Undefined
     case SizeNotEqual(function:String, position:MatrixPosition, otherPosition: MatrixPosition)
     case BLAS(function: String)
+    case ErrorWithStatus(status: Status)
     case ConstructWithSize
 }
 
@@ -25,12 +26,104 @@ public enum MatrixSize : Int {
     case Cols
 }
 
+//MARK: Hint Type Redefined
+public struct Hint:OptionSetType {
+    
+    public typealias RawValue = la_hint_t
+    internal var value:RawValue
+    
+    public typealias Element = Hint
+    /// Convert from a value of `RawValue`, succeeding unconditionally.
+    public init(rawValue: RawValue){
+        self.value = rawValue
+    }
+
+    public var rawValue: RawValue { return value }
+    
+    public static let Default = Hint.NoHint
+    public static let NoHint = Hint(rawValue: la_hint_t(LA_NO_HINT))
+    public static let ShapeDiagonal = Hint(rawValue: la_hint_t(LA_SHAPE_DIAGONAL))
+    public static let LowerTriangular = Hint(rawValue: la_hint_t(LA_SHAPE_LOWER_TRIANGULAR))
+    public static var UpperTriangular = Hint(rawValue: la_hint_t(LA_SHAPE_UPPER_TRIANGULAR))
+    public static var FeatureSymmetric = Hint(rawValue: la_hint_t(LA_FEATURE_SYMMETRIC))
+    public static var FeaturePositiveDefinite = Hint(rawValue: la_hint_t(LA_FEATURE_POSITIVE_DEFINITE))
+    public static var FeatureDiagonallyDominant = Hint(rawValue: la_hint_t(LA_FEATURE_DIAGONALLY_DOMINANT))
+}
+
+
+//MARK: Attribute Type Redefined
+public struct Attribute: RawRepresentable {
+    
+    public typealias RawValue = la_attribute_t
+    internal var value:RawValue
+    
+    /// Convert from a value of `RawValue`, succeeding unconditionally.
+    public init(rawValue: RawValue){
+        self.value = rawValue
+    }
+    
+    public var rawValue: RawValue { return value }
+    
+    
+    public static let Default = Attribute(rawValue: la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+    public static let EnableLogging = Attribute(rawValue: la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+}
+
+
+//MARK: Scalar Type Redefined
+public struct ScalarType: RawRepresentable {
+    
+    public typealias RawValue = la_scalar_type_t
+    internal var value:RawValue
+    
+    /// Convert from a value of `RawValue`, succeeding unconditionally.
+    public init(rawValue: RawValue){
+        self.value = rawValue
+    }
+    
+    public var rawValue: RawValue { return value }
+    
+    public static let Default = ScalarType.Double
+    public static let Float = ScalarType(rawValue: la_scalar_type_t(LA_SCALAR_TYPE_FLOAT))
+    public static let Double = ScalarType(rawValue: la_scalar_type_t(LA_SCALAR_TYPE_DOUBLE))
+
+}
+
+
+//MARK: Status Type Redefined
+public struct Status: RawRepresentable {
+    
+    public typealias RawValue = la_status_t
+    internal var value:RawValue
+    
+    /// Convert from a value of `RawValue`, succeeding unconditionally.
+    public init(rawValue: RawValue){
+        self.value = rawValue
+    }
+    
+    public var rawValue: RawValue { return value }
+    
+    
+    public static let Success = Status(rawValue: la_status_t(LA_SUCCESS))
+    public static let WarningPoorlyConditioned = Status(rawValue: la_status_t(LA_WARNING_POORLY_CONDITIONED))
+    public static let Internal = Status(rawValue: la_status_t(LA_INTERNAL_ERROR))
+    public static let InvalidParameterError = Status(rawValue: la_status_t(LA_INVALID_PARAMETER_ERROR))
+    public static let DimensionMismatchError = Status(rawValue: la_status_t(LA_DIMENSION_MISMATCH_ERROR))
+    public static let PrecisionMismatchError = Status(rawValue: la_status_t(LA_PRECISION_MISMATCH_ERROR))
+    public static let SingularError = Status(rawValue: la_status_t(LA_SINGULAR_ERROR))
+    public static let SliceOutOfBoundsError = Status(rawValue: la_status_t(LA_SLICE_OUT_OF_BOUNDS_ERROR))
+    
+}
+
 
 //MARK: - Matrix
 /**
     Construct a Matrix instance for Linear Algebra.
 */
 public struct Matrix {
+    
+    public let hint:Hint
+    public let attributes:Attribute
     
     /**
         Get count of rows in current matrix.
@@ -55,18 +148,23 @@ public struct Matrix {
     
     public init(object: la_object_t){
         self.object = object
+        self.hint = .NoHint
+        self.attributes = .Default
     }
     
-    public init( entries: [Double], rows: CountType, cols: CountType, stride: CountType? = nil, hint: Hint = Hint(LA_NO_HINT), attribute: Attribute = Attribute(LA_DEFAULT_ATTRIBUTES)) throws {
+    public init( entries: [Double], rows: CountType, cols: CountType, stride: CountType? = nil, hint: Hint = .Default, attributes:Attribute = .Default) throws {
         
         if Int(rows) * Int(cols) != entries.count {
             throw MatrixError.ConstructWithSize
         }
         
-        self.object = la_matrix_from_double_buffer(entries, CountType(rows), cols, stride ?? cols, hint, attribute)
+        self.object = la_matrix_from_double_buffer(entries, CountType(rows), cols, stride ?? cols, hint.rawValue, attributes.rawValue)
+        self.hint = hint
+        self.attributes = attributes
     }
     
-    public init( entries: [[Double]], hint: Hint = Hint(LA_NO_HINT), attribute: Attribute = Attribute(LA_DEFAULT_ATTRIBUTES)) throws {
+    
+    public init( entries: [[Double]], hint: Hint = Hint.Default, attribute: Attribute = .Default) throws {
             
         let flatEntries = entries.flatMap { $0 }
         
@@ -92,7 +190,7 @@ public struct Matrix {
 extension Matrix {
     
     public init(vectorWithEntries entries: [Double], transpose: Bool = false, hint: Hint =
-        Hint(LA_NO_HINT), attribute: Attribute = Attribute(LA_DEFAULT_ATTRIBUTES)){
+        .Default, attributes: Attribute = .Default){
             
             let rows:CountType
             let cols:CountType
@@ -105,16 +203,19 @@ extension Matrix {
                 cols = CountType(entries.count)
             }
             
-            self.object = la_matrix_from_double_buffer(entries, rows, cols, cols, hint, attribute)
+            self.object = la_matrix_from_double_buffer(entries, rows, cols, cols, hint.rawValue, attributes.rawValue)
             
+            self.hint = hint
+            self.attributes = attributes
     }
     
     
     public init(identifyWithSize size:CountType, scalarType: ScalarType =
-        ScalarType(LA_SCALAR_TYPE_DOUBLE), attribute: Attribute = Attribute(LA_DEFAULT_ATTRIBUTES)){
+        .Default, attributes: Attribute = .Default){
             
-            self.object = la_identity_matrix(size, scalarType, attribute)
-            
+            self.object = la_identity_matrix(size, scalarType.rawValue, attributes.rawValue)
+            self.attributes = attributes
+            self.hint = .NoHint
     }
     
 }
@@ -251,18 +352,20 @@ extension Matrix {
 extension Matrix {
     
     //get entries
-    public func entries() throws ->[Double] {
+    public func entries() throws -> [Double] {
         
         let totalCount = Int(self.rowsCount * self.colsCount)
         
         var result:[Double] = [Double](count:totalCount, repeatedValue: 0)
         let res = la_matrix_to_double_buffer(&result, CountType(self.colsCount), self.object)
         
+        let status = Status(rawValue: res)
+        
         //If no error occurred, print result
-        if Int32(res) == LA_SUCCESS {
+        if status == .Success {
             return result
         }else{
-            throw MatrixError.Undefined
+            throw MatrixError.ErrorWithStatus(status: status)
         }
     }
     
@@ -345,12 +448,7 @@ extension Matrix {
 
 //MARK: - Typealiases
 extension Matrix {
-    
-    public typealias Attribute = la_attribute_t
-    public typealias Hint = la_hint_t
     public typealias CountType = la_count_t
-    public typealias ScalarType = la_scalar_type_t
-    
 }
 
 //MARK: - Protocol Implement 

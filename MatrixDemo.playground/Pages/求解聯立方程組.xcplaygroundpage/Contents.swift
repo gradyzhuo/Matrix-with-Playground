@@ -24,7 +24,7 @@ x + 2y = 6
 
 
 do{
-    let m = try Matrix(entries: [[1,2],[3,4]])
+    let m = try Matrix(entries: [[1,2],[2,3],[4,5]])
     var v:Matrix = Matrix(vectorWithEntries: [6, 10])
     
     let result = try m.matrixWithSolve(rightMatrix: v)

@@ -20,3 +20,14 @@ print(vecY)
 print(matZ)
 // 2.0 2.0 2.0
 // 2.0 2.0 2.0
+
+
+
+do{
+    
+    let a = try Matrix(entries: [1,1,1], rows: 3, cols: 3, stride: 1, hint: la_hint_t(LA_NO_HINT), attribute: la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+    
+}catch{
+    print(error)
+}
+

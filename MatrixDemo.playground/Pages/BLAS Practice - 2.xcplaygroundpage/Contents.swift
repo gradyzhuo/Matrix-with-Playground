@@ -22,17 +22,17 @@ s = la_matrix_product(aMatrix, bMatrix)
 
 
 
-let identity = 
-let aTranspose = la_solve(aMatrix, identity)
+//let identity = 
+//let aTranspose = la_solve(aMatrix, identity)
 
-printMatrix(aTranspose)
+//printMatrix(aTranspose)
 
 
 
 func printMatrix(m:la_object_t){
     //Calculate result and send it to the variable "result"
-    var result:[Double] = [Double](count:4, repeatedValue: 0)
-    var res = la_matrix_to_double_buffer(&result, 2, m)
+    var result:[Double] = [Double](count:9, repeatedValue: 0)
+    var res = la_matrix_to_double_buffer(&result, 1, m)
     
     //If no error occurred, print result
     if Int32(res) == LA_SUCCESS {
@@ -42,3 +42,9 @@ func printMatrix(m:la_object_t){
         print("wrong")
     }
 }
+
+
+
+//var b:[Double] =
+var c = la_matrix_from_double_buffer([1,1,1], 3, 1, 1, la_hint_t(LA_NO_HINT), la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+printMatrix(c)

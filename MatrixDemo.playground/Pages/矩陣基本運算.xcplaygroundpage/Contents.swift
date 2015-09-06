@@ -17,7 +17,7 @@ import Foundation
 
 do{
     
-    let m1 = try Matrix(entries: [1, 2, 3, 4], rows: 2, cols: 2)
+    var m1 = try Matrix(entries: [1, 2, 3, 4], rows: 2, cols: 2)
     let m2 = try Matrix(entries: [3,-2, 5, 0], rows: 2, cols: 2)
     
     /*sum result
@@ -68,8 +68,17 @@ do{
     
     let inverseM2 = try -m2
     
+    var m3 = try Matrix(entries: [1, 2, 3], rows: 3, cols: 1)
+    var m4 = try m3 * m3.matrixWithTranspose()
+    
+    
+    
 }catch{
     print("error:\(error)")
 }
+
+
+
+
 
 //: [Next](@next)
